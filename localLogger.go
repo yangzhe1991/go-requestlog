@@ -2,6 +2,7 @@ package requestlog
 
 type localLogger struct {
 	Chan chan message
+	log  func(...interface{})
 }
 
 func (this *localLogger) Run() {

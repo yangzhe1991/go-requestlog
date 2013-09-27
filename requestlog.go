@@ -11,7 +11,7 @@ type message struct {
 	Content  string
 }
 
-func (m *message) ToString() string {
+func (m *message) String() string {
 	return fmt.Sprintf("%s\t%s", m.Category, m.Content)
 }
 
@@ -25,7 +25,7 @@ var runningChans map[string]*chan message
 
 func init() {
 	activeRequestLoggers = make(map[string]*RequestLogger)
-	getLoggerChan("local")
+	runningChans = make(map[string]*chan message)
 }
 
 //note: *defualtRequestLogger is RequestLogger, defualtRequestLogger is not
@@ -48,31 +48,29 @@ func (this *RequestLogger) Log(category string, req *http.Request, keys *map[str
 
 }
 
-func getLoggerChan(loggerType string) *chan message {
-	c, ok := runningChans[loggerType]
-	if !ok {
-		var l logger
-		if loggerType == "local" {
-			l = &localLogger{make(chan message, 5000)}
-
-		} else {
-			l = &remoteLogger{make(chan message, 5000)}
-		}
-		go l.Run()
-		c = l.GetChan()
-		runningChans[loggerType] = c
-
-	}
-	return c
-}
-
-func GetRequestLogger(loggerType string, productName string, throwWhenTooMany bool) *RequestLogger {
+func GetLocalRequestLogger(productName string, throwWhenTooMany bool, logfunc func(...interface{})) *RequestLogger {
 	var l sync.Locker
 	l.Lock()
-	rl, ok := activeRequestLoggers[loggerType+"|"+productName]
+	rl, ok := activeRequestLoggers["local|"+productName]
 	if !ok {
-		rl = &RequestLogger{productName, throwWhenTooMany, getLoggerChan(loggerType)}
-		activeRequestLoggers[loggerType+"|"+productName] = rl
+		log := &localLogger{make(chan message, 50000), logfunc}
+		c := log.GetChan()
+		rl = &RequestLogger{productName, throwWhenTooMany, c}
+		activeRequestLoggers["local|"+productName] = rl
+	}
+	l.Unlock()
+	return rl
+}
+
+func GetRemoteRequestLogger(productName string, throwWhenTooMany bool, addr string) *RequestLogger {
+	var l sync.Locker
+	l.Lock()
+	rl, ok := activeRequestLoggers[addr+"|"+productName]
+	if !ok {
+		log := &remoteLogger{make(chan message, 50000), addr}
+		c := log.GetChan()
+		rl = &RequestLogger{productName, throwWhenTooMany, c}
+		activeRequestLoggers["local|"+productName] = rl
 	}
 	l.Unlock()
 	return rl

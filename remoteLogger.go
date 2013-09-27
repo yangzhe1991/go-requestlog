@@ -1,7 +1,8 @@
 package requestlog
 
 type remoteLogger struct {
-	Chan chan message
+	Chan  chan message
+	addrs string
 }
 
 func (this *remoteLogger) Run() {
