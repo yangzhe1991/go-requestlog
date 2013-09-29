@@ -61,6 +61,9 @@ func (this *RequestLogger) Log(category string, req *http.Request, headerKeys ma
 	var buffer bytes.Buffer
 	//log millisecond rather than nano for compatibility with Youdao's request-log in JAVA.
 	buffer.WriteString(string(time.Now().UnixNano()/1000) + "\t" + category)
+
+	buffer.WriteString("\t", getIp(req))
+
 	if headerKeys == nil {
 		for k, vs := range req.Header {
 			buffer.WriteString("\t" + escape(k) + "=" + escape(vs[0]))
@@ -112,6 +115,15 @@ func escape(s string) string {
 	s = strings.Replace(s, "\\", "\\\\", 0)
 	return s
 }
+
+func getIp(req *http.Request) {
+	xff := req.Header.Get("X-Forwarded-For")
+	if len(xff) > 0 {
+		return strings.Split(xff, ":")[0]
+	}
+	return strings.Split(req.RemoteAddr, ":")[0]
+}
+
 func GetLocalRequestLogger(productName string, logfunc func(...interface{})) *RequestLogger {
 	var l sync.Locker
 	l.Lock()
