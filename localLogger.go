@@ -7,7 +7,8 @@ type localLogger struct {
 
 func (this *localLogger) Run() {
 	for {
-		//m := <-this.Chan
+		m := <-this.Chan
+		this.log(m.String())
 	}
 }
 func (this *localLogger) GetChan() *chan message {
