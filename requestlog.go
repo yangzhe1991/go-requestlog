@@ -38,13 +38,21 @@ type RequestLogger struct {
 /*
 Log the attributes whose names are in keys from HTTP request,
 if keys == nil, all the attributes will be logged.
-It is better to use it in another go routine like
-
+It is better to use it in another go routine like:
 go Log("", req, nil)
-
 category helps to classify the logs, can be empty
 */
-func (this *RequestLogger) Log(category string, req *http.Request, keys *map[string]bool) {
+func (this *RequestLogger) Log(category string, req *http.Request, canonicalHeaderKeys *map[string]bool, formKeys *map[string]bool) {
+	
+	if canonicalHeaderKeys == nil {
+		canonicalHeaderKeys = make(map[string]bool)
+	}
+	if formKeys == nil {
+		formKeys = make(map[string]bool)
+	}
+	for k, v := range canonicalHeaderKeys {
+
+	}
 
 }
 
@@ -54,6 +62,7 @@ func GetLocalRequestLogger(productName string, throwWhenTooMany bool, logfunc fu
 	rl, ok := activeRequestLoggers["local|"+productName]
 	if !ok {
 		log := &localLogger{make(chan message, 50000), logfunc}
+		go log.Run()
 		c := log.GetChan()
 		rl = &RequestLogger{productName, throwWhenTooMany, c}
 		activeRequestLoggers["local|"+productName] = rl
@@ -68,9 +77,10 @@ func GetRemoteRequestLogger(productName string, throwWhenTooMany bool, addr stri
 	rl, ok := activeRequestLoggers[addr+"|"+productName]
 	if !ok {
 		log := &remoteLogger{make(chan message, 50000), addr}
+		go log.Run()
 		c := log.GetChan()
 		rl = &RequestLogger{productName, throwWhenTooMany, c}
-		activeRequestLoggers["local|"+productName] = rl
+		activeRequestLoggers[addr+"|"+productName] = rl
 	}
 	l.Unlock()
 	return rl

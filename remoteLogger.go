@@ -6,6 +6,7 @@ type remoteLogger struct {
 }
 
 func (this *remoteLogger) Run() {
+
 	for {
 		//m := <-this.Chan
 	}
