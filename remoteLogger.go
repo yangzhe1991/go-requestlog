@@ -20,14 +20,13 @@ func (this *remoteLogger) Run() {
 		m := <-this.Chan
 		conn, err := net.DialTimeout("tcp", addrs[index], timeout)
 		if err != nil {
-			conn.Close()
 			index = (index + 1) % len(addrs)
 			continue
 		}
 		fmt.Fprintln(conn, m.Product)
 		fmt.Fprintln(conn, m.Content)
 		conn.Close()
-		fmt.Println(m.Content)
+		//fmt.Println(m.Content)
 	}
 }
 func (this *remoteLogger) GetChan() *chan message {

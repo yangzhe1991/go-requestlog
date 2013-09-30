@@ -63,9 +63,9 @@ There are frequently recorded parameters not in header or form will always be lo
 func (this *requestLogger) Log(category string, req *http.Request, headerKeys map[string]bool, formKeys map[string]bool) {
 	var buffer bytes.Buffer
 	//log millisecond rather than nano for compatibility with Youdao's request-log in JAVA.
-	buffer.WriteString(string(time.Now().UnixNano()/1000) + "\t" + category)
+	buffer.WriteString(fmt.Sprintf("%d", time.Now().UnixNano()/1000) + "\t" + category)
 
-	buffer.WriteString("\t" + getIp(req))
+	buffer.WriteString("\tip=" + getIp(req))
 
 	if headerKeys == nil {
 		for k, vs := range req.Header {
