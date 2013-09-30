@@ -6,7 +6,6 @@ import (
 	//requestlog ".."
 	"log"
 	"net/http"
-	"time"
 )
 
 func main() {
