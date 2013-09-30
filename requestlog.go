@@ -23,18 +23,21 @@ type logger interface {
 	GetChan() *chan message
 }
 
-var activeRequestLoggers map[string]*RequestLogger
+var activeRequestLoggers map[string]*requestLogger
 var runningChans map[string]*chan message
 
 func init() {
-	activeRequestLoggers = make(map[string]*RequestLogger)
+	activeRequestLoggers = make(map[string]*requestLogger)
 	runningChans = make(map[string]*chan message)
 }
 
-//note: *defualtRequestLogger is RequestLogger, defualtRequestLogger is not
-type RequestLogger struct {
+type requestLogger struct {
 	ProductName string
 	Chan        *chan message
+}
+
+type RequestLogger interface {
+	Log(category string, req *http.Request, headerKeys map[string]bool, formKeys map[string]bool)
 }
 
 /*
@@ -57,12 +60,12 @@ There are frequently recorded parameters not in header or form will always be lo
 	ip("X-Forwarded-For" first, then RemoteAddr's ip)
 	...(to be added)
 */
-func (this *RequestLogger) Log(category string, req *http.Request, headerKeys map[string]bool, formKeys map[string]bool) {
+func (this *requestLogger) Log(category string, req *http.Request, headerKeys map[string]bool, formKeys map[string]bool) {
 	var buffer bytes.Buffer
 	//log millisecond rather than nano for compatibility with Youdao's request-log in JAVA.
 	buffer.WriteString(string(time.Now().UnixNano()/1000) + "\t" + category)
 
-	buffer.WriteString("\t", getIp(req))
+	buffer.WriteString("\t" + getIp(req))
 
 	if headerKeys == nil {
 		for k, vs := range req.Header {
@@ -116,7 +119,7 @@ func escape(s string) string {
 	return s
 }
 
-func getIp(req *http.Request) {
+func getIp(req *http.Request) string {
 	xff := req.Header.Get("X-Forwarded-For")
 	if len(xff) > 0 {
 		return strings.Split(xff, ":")[0]
@@ -124,7 +127,7 @@ func getIp(req *http.Request) {
 	return strings.Split(req.RemoteAddr, ":")[0]
 }
 
-func GetLocalRequestLogger(productName string, logfunc func(...interface{})) *RequestLogger {
+func GetLocalRequestLogger(productName string, logfunc func(...interface{})) RequestLogger {
 	var l sync.Locker
 	l.Lock()
 	rl, ok := activeRequestLoggers["local|"+productName]
@@ -132,22 +135,25 @@ func GetLocalRequestLogger(productName string, logfunc func(...interface{})) *Re
 		log := &localLogger{make(chan message, 50000), logfunc}
 		go log.Run()
 		c := log.GetChan()
-		rl = &RequestLogger{productName, c}
+		rl = &requestLogger{productName, c}
 		activeRequestLoggers["local|"+productName] = rl
 	}
 	l.Unlock()
 	return rl
 }
 
-func GetRemoteRequestLogger(productName string, addr string) *RequestLogger {
+func GetRemoteRequestLogger(productName string, addr string) RequestLogger {
 	var l sync.Mutex
+	if addr == "" {
+		addr = "nb380:2325,nb374:2325"
+	}
 	l.Lock()
 	rl, ok := activeRequestLoggers[addr+"|"+productName]
 	if !ok {
 		log := &remoteLogger{make(chan message, 50000), addr}
 		go log.Run()
 		c := log.GetChan()
-		rl = &RequestLogger{productName, c}
+		rl = &requestLogger{productName, c}
 		activeRequestLoggers[addr+"|"+productName] = rl
 	}
 	l.Unlock()
