@@ -63,7 +63,7 @@ There are frequently recorded parameters not in header or form will always be lo
 func (this *requestLogger) Log(category string, req *http.Request, headerKeys map[string]bool, formKeys map[string]bool) {
 	var buffer bytes.Buffer
 	//log millisecond rather than nano for compatibility with Youdao's request-log in JAVA.
-	buffer.WriteString(fmt.Sprintf("%d", time.Now().UnixNano()/1000) + "\t" + category)
+	buffer.WriteString(fmt.Sprintf("%d", time.Now().UnixNano()/1000/1000) + "\t" + category)
 
 	buffer.WriteString("\tip=" + getIp(req))
 
@@ -145,13 +145,15 @@ func GetLocalRequestLogger(productName string, logfunc func(...interface{})) Req
 func GetRemoteRequestLogger(productName string, addr string) RequestLogger {
 	var l sync.Mutex
 	if addr == "" {
-		addr = "nb380:2325,nb374:2325"
+		addr = "nb380x.corp.youdao.com:2325,nb374x.corp.youdao.com:2325"
 	}
 	l.Lock()
 	rl, ok := activeRequestLoggers[addr+"|"+productName]
+
 	if !ok {
+		//fmt.Println("new a remote logger")
 		log := &remoteLogger{make(chan message, 50000), addr}
-		go log.Run()
+		go log.Run(productName)
 		c := log.GetChan()
 		rl = &requestLogger{productName, c}
 		activeRequestLoggers[addr+"|"+productName] = rl
