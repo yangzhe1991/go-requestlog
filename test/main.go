@@ -1,7 +1,7 @@
 package main
 
 import (
-	requestlog ".."
+	requestlog "github.com/yangzhe1991/go-requestlog"
 	"log"
 	"net/http"
 )
