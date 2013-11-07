@@ -15,7 +15,7 @@ type message struct {
 }
 
 func (m *message) String() string {
-	return fmt.Sprintf("%s\t%s", m.Product, m.Content)
+	return fmt.Sprintf("%s:%s", m.Product, m.Content)
 }
 
 type logger interface {
