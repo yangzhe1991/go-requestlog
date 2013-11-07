@@ -127,7 +127,7 @@ func getIp(req *http.Request) string {
 	return strings.Split(req.RemoteAddr, ":")[0]
 }
 
-func GetLocalRequestLogger(productName string, logfunc func(...interface{})) RequestLogger {
+func GetLocalRequestLogger(productName string, logfunc func(string)) RequestLogger {
 	var l sync.Mutex
 	l.Lock()
 	rl, ok := activeRequestLoggers["local|"+productName]
