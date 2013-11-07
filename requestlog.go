@@ -66,6 +66,8 @@ func (this *requestLogger) Log(category string, req *http.Request, headerKeys ma
 	buffer.WriteString(fmt.Sprintf("%d", time.Now().UnixNano()/1000/1000) + "\t" + category)
 
 	buffer.WriteString("\t[ip=" + getIp(req) + "]")
+	buffer.WriteString("\t[useragent=" + req.Header.Get("User-Agent") + "]")
+	buffer.WriteString("\t[referer=" + req.Header.Get("Referer") + "]")
 
 	if headerKeys == nil {
 		for k, vs := range req.Header {
