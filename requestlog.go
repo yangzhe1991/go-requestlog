@@ -65,11 +65,11 @@ func (this *requestLogger) Log(category string, req *http.Request, headerKeys ma
 	//log millisecond rather than nano for compatibility with Youdao's request-log in JAVA.
 	buffer.WriteString(fmt.Sprintf("%d", time.Now().UnixNano()/1000/1000) + "\t" + category)
 
-	buffer.WriteString("\tip=" + getIp(req))
+	buffer.WriteString("\t[ip=" + getIp(req) + "]")
 
 	if headerKeys == nil {
 		for k, vs := range req.Header {
-			buffer.WriteString("\t" + escape(k) + "=" + escape(vs[0]))
+			buffer.WriteString("\t[" + escape(k) + "=" + escape(vs[0]) + "]")
 		}
 	} else {
 		for k, v := range headerKeys {
@@ -77,12 +77,13 @@ func (this *requestLogger) Log(category string, req *http.Request, headerKeys ma
 				continue
 			}
 			value, ok := req.Header[k]
-			buffer.WriteString("\t" + escape(k) + "=")
+			buffer.WriteString("\t[" + escape(k) + "=")
 			if ok {
 				buffer.WriteString(escape(value[0]))
 			} else {
 				buffer.WriteString("NULL")
 			}
+			buffer.WriteString("]")
 		}
 	}
 	req.ParseForm()
