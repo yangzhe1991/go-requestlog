@@ -25,18 +25,22 @@ func (this *remoteLogger) Run(product string) {
 			fmt.Println("remote logger connection build error!", err, addrs[index])
 			continue
 		}
-		fmt.Println("remote logger conn build successful!")
+		//fmt.Println("remote logger conn build successful!")
 		fmt.Fprintln(conn, product)
+		counter := 100
 		for {
 			m := <-this.Chan
 			_, err := fmt.Fprintln(conn, m.Content)
+			fmt.Println("send one message")
 			if err != nil {
 				fmt.Println("remote logger send message err!", err)
 				break
 			}
-
+			if counter--; counter <= 0 {
+				break
+			}
 		}
-		fmt.Println("remote logger conn close")
+		//fmt.Println("remote logger conn close")
 		conn.Close()
 	}
 }
